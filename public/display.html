@@ -1,0 +1,198 @@
+<!-- public/display.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #000;
+        height: 100%;
+      }
+      video {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+      video.show {
+        display: block;
+      }
+
+      /* Special styling for Halloween video */
+      #halloween {
+        object-fit: contain !important;
+        object-position: center;
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      id="devil-talks"
+      autoplay
+      muted
+      playsinline
+      src="/loops/devil-talks.mp4"
+    ></video>
+    <video
+      id="ghost-girl"
+      autoplay
+      muted
+      playsinline
+      src="/loops/ghost-girl.mp4"
+    ></video>
+    <video
+      id="realistic-zombie"
+      autoplay
+      muted
+      playsinline
+      src="/loops/realistic-zombie.mp4"
+    ></video>
+    <video
+      id="ghost-wall"
+      autoplay
+      muted
+      playsinline
+      src="/loops/ghost-wall.mp4"
+    ></video>
+    <video
+      id="zombie-power-cut"
+      loop
+      autoplay
+      muted
+      playsinline
+      src="/loops/zombie-power-cut.mp4"
+    ></video>
+    <video
+      id="zombie-walk"
+      autoplay
+      muted
+      playsinline
+      src="/loops/zombie-walk.mp4"
+    ></video>
+    <video id="halloween" muted playsinline src="/loops/halloween.mp4"></video>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const q = new URLSearchParams(location.search);
+        const room = q.get("room") || "HALLOWEEN";
+        const socket = io();
+
+        // Collect the videos safely
+        const vids = {
+          "devil-talks": document.getElementById("devil-talks"),
+          "ghost-girl": document.getElementById("ghost-girl"),
+          "ghost-wall": document.getElementById("ghost-wall"),
+          "realistic-zombie": document.getElementById("realistic-zombie"),
+          "zombie-power-cut": document.getElementById("zombie-power-cut"),
+          "zombie-walk": document.getElementById("zombie-walk"),
+          halloween: document.getElementById("halloween"),
+        };
+
+        // Default video to revert to
+        const DEFAULT_VIDEO = "zombie-power-cut";
+
+        // Warn if any are missing and add event listeners
+        Object.entries(vids).forEach(([k, v]) => {
+          if (!v) {
+            console.warn(`Missing <video id="${k}"> in display.html`);
+          } else {
+            console.log(`Found video for theme "${k}":`, v);
+            // Add event listeners to track video loading
+            v.addEventListener("loadstart", () =>
+              console.log(`Video ${k} started loading`)
+            );
+            v.addEventListener("canplay", () =>
+              console.log(`Video ${k} can play`)
+            );
+            v.addEventListener("error", (e) =>
+              console.error(`Video ${k} error:`, e)
+            );
+            v.addEventListener("play", () =>
+              console.log(`Video ${k} started playing`)
+            );
+            v.addEventListener("pause", () => console.log(`Video ${k} paused`));
+          }
+        });
+
+        function show(theme) {
+          console.log("show() called with theme:", theme);
+          const v = vids[theme];
+          if (!v) {
+            console.warn("No video found for theme:", theme);
+            return; // bail if missing
+          }
+          console.log("Found video element:", v.id);
+
+          // Pause all videos and hide them
+          Object.values(vids).forEach((x) => {
+            if (x) {
+              x.classList.remove("show");
+              x.pause();
+            }
+          });
+
+          // Show and play the selected video
+          v.classList.add("show");
+          console.log("Added 'show' class to video:", v.id);
+
+          // All videos now play once and revert to default
+          v.currentTime = 0; // Start from beginning
+          v.play()
+            .then(() => {
+              console.log("Video started playing:", v.id);
+              // When video ends, revert to default video
+              v.addEventListener(
+                "ended",
+                () => {
+                  console.log(
+                    "Video ended, reverting to default:",
+                    DEFAULT_VIDEO
+                  );
+                  show(DEFAULT_VIDEO);
+                },
+                { once: true }
+              );
+            })
+            .catch((err) => {
+              console.error("Error playing video:", v.id, err);
+            });
+        }
+
+        // No warm up - videos will be played on demand
+
+        // Enable autoplay on first user interaction
+        function enableAutoplay() {
+          console.log("Enabling autoplay after user interaction");
+          Object.values(vids).forEach((v) => {
+            if (v) {
+              v.muted = false; // Unmute for audio
+            }
+          });
+          // Remove the event listener after first interaction
+          document.removeEventListener("click", enableAutoplay);
+          document.removeEventListener("touchstart", enableAutoplay);
+        }
+
+        // Add event listeners for user interaction
+        document.addEventListener("click", enableAutoplay);
+        document.addEventListener("touchstart", enableAutoplay);
+
+        // Default theme
+        show("zombie-power-cut");
+
+        socket.on("connect", () =>
+          socket.emit("join", { room, role: "display" })
+        );
+        socket.on("theme:current", ({ theme }) => {
+          console.log("Received theme:current event with theme:", theme);
+          show(theme);
+        });
+      });
+    </script>
+  </body>
+</html>

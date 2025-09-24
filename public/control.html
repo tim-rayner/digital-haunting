@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a0a1a 50%,
+          #0a0a1a 100%
+        );
+        color: #e8e8e8;
+        font-family: "Cormorant Garamond", serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Animated background particles */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: radial-gradient(
+            2px 2px at 20px 30px,
+            rgba(255, 255, 255, 0.1),
+            transparent
+          ),
+          radial-gradient(
+            2px 2px at 40px 70px,
+            rgba(255, 255, 255, 0.05),
+            transparent
+          ),
+          radial-gradient(
+            1px 1px at 90px 40px,
+            rgba(255, 255, 255, 0.1),
+            transparent
+          ),
+          radial-gradient(
+            1px 1px at 130px 80px,
+            rgba(255, 255, 255, 0.05),
+            transparent
+          );
+        background-repeat: repeat;
+        background-size: 200px 200px;
+        animation: sparkle 20s linear infinite;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      @keyframes sparkle {
+        0% {
+          transform: translateY(0px);
+        }
+        100% {
+          transform: translateY(-200px);
+        }
+      }
+
+      .container {
+        position: relative;
+        z-index: 2;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 3rem;
+        position: relative;
+      }
+
+      .header::before {
+        content: "";
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #8b0000, transparent);
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      h1 {
+        font-family: "Cinzel", serif;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(45deg, #8b0000, #ff6b6b, #8b0000);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradientShift 4s ease-in-out infinite;
+        text-shadow: 0 0 30px rgba(139, 0, 0, 0.5);
+      }
+
+      @keyframes gradientShift {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .subtitle {
+        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        font-style: italic;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+        color: #c0c0c0;
+      }
+
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        margin-bottom: 2rem;
+        overflow: visible;
+      }
+
+      .spell-button {
+        position: relative;
+        padding: 1.5rem 2rem;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+        color: #e8e8e8;
+        font-family: "Cinzel", serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .spell-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(139, 0, 0, 0.3),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .spell-button:hover::before {
+        left: 100%;
+      }
+
+      .spell-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 0, 0, 0.4),
+          0 0 20px rgba(139, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(139, 0, 0, 0.5);
+      }
+
+      .spell-button:active {
+        transform: translateY(0);
+        transition: transform 0.1s;
+      }
+
+      .spell-button.active {
+        background: linear-gradient(145deg, #2d0a0a, #1a0505);
+        border: 2px solid #8b0000;
+        box-shadow: 0 0 30px rgba(139, 0, 0, 0.6),
+          inset 0 0 20px rgba(139, 0, 0, 0.2);
+        color: #ff6b6b;
+      }
+
+      .spell-button.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        cursor: not-allowed;
+        filter: grayscale(50%);
+      }
+
+      .spell-button.adult-content {
+        background: linear-gradient(145deg, #2d0a0a, #1a0505);
+        border: 2px solid #ff0000;
+        position: relative;
+        overflow: visible;
+      }
+
+      .spell-button.adult-content:hover {
+        background: linear-gradient(145deg, #3d0a0a, #2a0505);
+        border: 2px solid #ff3333;
+        box-shadow: 0 8px 25px rgba(255, 0, 0, 0.4),
+          0 0 20px rgba(255, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+
+      .adult-warning {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ff0000;
+        color: #fff;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+      }
+
+      .status {
+        text-align: center;
+        font-size: 1.1rem;
+        font-style: italic;
+        color: #8b0000;
+        margin-top: 1rem;
+        min-height: 1.5rem;
+        opacity: 0.8;
+      }
+
+      .status.cooldown {
+        animation: pulse 1s ease-in-out infinite;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 3rem;
+        font-size: 0.9rem;
+        opacity: 0.6;
+        color: #666;
+      }
+
+      /* Mobile optimizations */
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+          min-height: 100vh;
+          justify-content: flex-start;
+          padding-top: 2rem;
+        }
+
+        .header {
+          margin-bottom: 2rem;
+        }
+
+        h1 {
+          font-size: clamp(1.5rem, 6vw, 2rem);
+          line-height: 1.2;
+        }
+
+        .subtitle {
+          font-size: clamp(0.9rem, 4vw, 1.1rem);
+          margin-top: 0.8rem;
+          line-height: 1.3;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .spell-button {
+          padding: 1.2rem 1.5rem;
+          font-size: 1rem;
+          min-height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .status {
+          font-size: 1rem;
+          margin-top: 1.5rem;
+          padding: 0 1rem;
+        }
+
+        .footer {
+          margin-top: 2rem;
+          font-size: 0.8rem;
+        }
+      }
+
+      /* Extra small mobile devices */
+      @media (max-width: 480px) {
+        .container {
+          padding: 0.8rem;
+          padding-top: 1.5rem;
+        }
+
+        .header {
+          margin-bottom: 1.5rem;
+        }
+
+        h1 {
+          font-size: clamp(1.3rem, 7vw, 1.8rem);
+        }
+
+        .subtitle {
+          font-size: clamp(0.8rem, 4.5vw, 1rem);
+          margin-top: 0.6rem;
+        }
+
+        .grid {
+          gap: 0.8rem;
+          margin-bottom: 1.2rem;
+        }
+
+        .spell-button {
+          padding: 1rem 1.2rem;
+          font-size: 0.9rem;
+          min-height: 55px;
+          letter-spacing: 0.5px;
+        }
+
+        .status {
+          font-size: 0.9rem;
+          margin-top: 1rem;
+        }
+
+        .footer {
+          margin-top: 1.5rem;
+          font-size: 0.75rem;
+        }
+      }
+
+      /* Landscape mobile orientation */
+      @media (max-width: 768px) and (orientation: landscape) {
+        .container {
+          padding: 1rem;
+          justify-content: center;
+        }
+
+        .header {
+          margin-bottom: 1.5rem;
+        }
+
+        h1 {
+          font-size: clamp(1.2rem, 4vw, 1.6rem);
+        }
+
+        .subtitle {
+          font-size: clamp(0.8rem, 3vw, 1rem);
+        }
+
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.8rem;
+          margin-bottom: 1rem;
+        }
+
+        .spell-button {
+          padding: 0.8rem 1rem;
+          font-size: 0.85rem;
+          min-height: 45px;
+        }
+
+        .status {
+          font-size: 0.9rem;
+          margin-top: 0.8rem;
+        }
+
+        .footer {
+          margin-top: 1rem;
+          font-size: 0.7rem;
+        }
+      }
+
+      /* Touch device optimizations */
+      @media (hover: none) and (pointer: coarse) {
+        .spell-button {
+          min-height: 60px;
+          padding: 1.2rem 1.5rem;
+        }
+
+        .spell-button:hover {
+          transform: none;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          border: none;
+        }
+
+        .spell-button:active {
+          transform: scale(0.98);
+          transition: transform 0.1s;
+        }
+      }
+
+      /* High DPI displays */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .spell-button {
+          border: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .spell-button.active {
+          border: 1px solid #8b0000;
+        }
+      }
+
+      /* Accessibility improvements for mobile */
+      @media (max-width: 768px) {
+        .spell-button:focus {
+          outline: 2px solid #8b0000;
+          outline-offset: 2px;
+        }
+
+        .spell-button:focus:not(:focus-visible) {
+          outline: none;
+        }
+
+        /* Ensure text is readable */
+        .spell-button {
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .status {
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+      }
+
+      /* Loading animation */
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(139, 0, 0, 0.3);
+        border-radius: 50%;
+        border-top-color: #8b0000;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Experience Selection Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+      }
+
+      .modal-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .modal-content {
+        background: linear-gradient(145deg, #1a0a0a, #0d0505);
+        border: 2px solid #8b0000;
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 600px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
+          0 0 0 1px rgba(139, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .modal-content::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(139, 0, 0, 0.1) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .modal-header h2 {
+        font-family: "Cinzel", serif;
+        font-size: 2.5rem;
+        color: #fff;
+        margin: 0 0 1rem 0;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        background: linear-gradient(45deg, #fff, #c0c0c0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .modal-header p {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.2rem;
+        color: #c0c0c0;
+        margin: 0 0 2rem 0;
+        opacity: 0.9;
+      }
+
+      .modal-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .experience-option {
+        background: linear-gradient(145deg, #2a0a0a, #1a0505);
+        border: 2px solid #444;
+        border-radius: 15px;
+        padding: 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .experience-option::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+
+      .experience-option:hover::before {
+        left: 100%;
+      }
+
+      .experience-option:hover {
+        border-color: #8b0000;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(139, 0, 0, 0.3);
+      }
+
+      .experience-option:active {
+        transform: translateY(-2px);
+      }
+
+      .option-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .option-title {
+        font-family: "Cinzel", serif;
+        font-size: 1.5rem;
+        color: #fff;
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
+
+      .option-description {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        color: #c0c0c0;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+      }
+
+      .option-warning {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background: rgba(139, 0, 0, 0.2);
+        border: 1px solid rgba(139, 0, 0, 0.3);
+        color: #fff;
+      }
+
+      #parentalOption .option-warning {
+        background: rgba(0, 139, 0, 0.2);
+        border-color: rgba(0, 139, 0, 0.3);
+        color: #90ee90;
+      }
+
+      /* Mobile responsive modal */
+      @media (max-width: 768px) {
+        .modal-content {
+          padding: 2rem 1.5rem;
+          margin: 1rem;
+        }
+
+        .modal-header h2 {
+          font-size: 2rem;
+        }
+
+        .modal-header p {
+          font-size: 1rem;
+        }
+
+        .experience-option {
+          padding: 1.5rem;
+        }
+
+        .option-title {
+          font-size: 1.3rem;
+        }
+
+        .option-description {
+          font-size: 0.9rem;
+        }
+      }
+
+      /* Scary popup flicker effect */
+      .scary-popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #000;
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+      }
+
+      .scary-popup.show {
+        display: flex;
+        opacity: 1;
+      }
+
+      .scary-popup img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        filter: contrast(1.2) brightness(0.9);
+      }
+
+      .scary-popup .overlay-text {
+        position: absolute;
+        bottom: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #ff0000;
+        font-family: "Cinzel", serif;
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+        text-align: center;
+        text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000,
+          2px 2px 4px rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        opacity: 1;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .scary-popup.flicker .overlay-text {
+        animation: textFlicker 1.2s ease-in-out;
+      }
+
+      @keyframes textFlicker {
+        /* Phase 1: Quick flickers */
+        0% {
+          opacity: 0;
+        }
+        5% {
+          opacity: 1;
+        }
+        10% {
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        20% {
+          opacity: 0;
+        }
+        25% {
+          opacity: 1;
+        }
+        30% {
+          opacity: 0;
+        }
+        35% {
+          opacity: 1;
+        }
+        40% {
+          opacity: 0;
+        }
+
+        /* Brief pause */
+        50% {
+          opacity: 0;
+        }
+
+        /* Phase 2: Longer, more dramatic flash */
+        60% {
+          opacity: 1;
+        }
+        70% {
+          opacity: 1;
+        }
+        80% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .scary-popup.flicker {
+        animation: scaryFlicker 1.2s ease-in-out;
+      }
+
+      /* Enhanced flickering effect for 20 seconds after popup */
+      body.enhanced-flicker {
+        animation: enhancedFlicker 0.5s ease-in-out infinite;
+      }
+
+      @keyframes enhancedFlicker {
+        0% {
+          filter: brightness(1) contrast(1);
+        }
+        10% {
+          filter: brightness(0.95) contrast(1.05);
+        }
+        20% {
+          filter: brightness(1.02) contrast(0.98);
+        }
+        30% {
+          filter: brightness(0.98) contrast(1.02);
+        }
+        40% {
+          filter: brightness(1) contrast(1);
+        }
+        50% {
+          filter: brightness(0.96) contrast(1.04);
+        }
+        60% {
+          filter: brightness(1.03) contrast(0.97);
+        }
+        70% {
+          filter: brightness(0.97) contrast(1.03);
+        }
+        80% {
+          filter: brightness(1.01) contrast(0.99);
+        }
+        90% {
+          filter: brightness(0.99) contrast(1.01);
+        }
+        100% {
+          filter: brightness(1) contrast(1);
+        }
+      }
+
+      @keyframes scaryFlicker {
+        /* Phase 1: Quick flickers */
+        0% {
+          opacity: 0;
+        }
+        5% {
+          opacity: 1;
+        }
+        10% {
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        20% {
+          opacity: 0;
+        }
+        25% {
+          opacity: 1;
+        }
+        30% {
+          opacity: 0;
+        }
+        35% {
+          opacity: 1;
+        }
+        40% {
+          opacity: 0;
+        }
+
+        /* Brief pause */
+        50% {
+          opacity: 0;
+        }
+
+        /* Phase 2: Longer, more dramatic flash */
+        60% {
+          opacity: 1;
+        }
+        70% {
+          opacity: 1;
+        }
+        80% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Welcome Trick-or-Treaters</h1>
+        <div class="subtitle">
+          to 5 St Olaves Road - digital haunting experience
+        </div>
+      </div>
+
+      <div class="grid">
+        <button class="spell-button" data-theme="devil-talks">
+          <span>Summon the Demon</span>
+        </button>
+        <button class="spell-button" data-theme="ghost-girl">
+          <span>Call the Lost Spirit</span>
+        </button>
+        <button class="spell-button" data-theme="ghost-wall">
+          <span>Manifest the Phantom</span>
+        </button>
+        <button class="spell-button" data-theme="realistic-zombie">
+          <span>Raise the Undead</span>
+        </button>
+        <button class="spell-button" data-theme="zombie-power-cut">
+          <span>Invoke the Darkness</span>
+        </button>
+        <button class="spell-button" data-theme="zombie-walk">
+          <span>Awaken the Cursed</span>
+        </button>
+        <button class="spell-button adult-content" data-theme="halloween">
+          <span>The Night He Came Home</span>
+          <div class="adult-warning">12+</div>
+        </button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="footer">
+        <p>Choose your fate... if you dare</p>
+      </div>
+    </div>
+
+    <!-- Scary popup overlay -->
+    <div class="scary-popup" id="scaryPopup">
+      <img src="/popup.jpg" alt="Scary popup" />
+      <div class="overlay-text">Knock for a treat if you dare</div>
+    </div>
+
+    <!-- Experience Selection Modal -->
+    <div class="modal-overlay" id="experienceModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Choose Your Experience</h2>
+          <p>Welcome to 5 St Olaves Road - Digital Haunting Experience</p>
+        </div>
+        <div class="modal-options">
+          <button class="experience-option" id="immersiveOption">
+            <div class="option-icon">👻</div>
+            <div class="option-title">Full Immersive Experience</div>
+            <div class="option-description">
+              For older audiences - includes intense scares, flashing effects,
+              and all content
+            </div>
+            <div class="option-warning">⚠️ Recommended for ages 10+</div>
+          </button>
+          <button class="experience-option" id="parentalOption">
+            <div class="option-icon">👨‍👩‍👧‍👦</div>
+            <div class="option-title">Parental Guidance Experience</div>
+            <div class="option-description">
+              Family-friendly version with reduced intensity and age-appropriate
+              content
+            </div>
+            <div class="option-warning">✅ Safe for all ages</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const room = params.get("room") || "HALLOWEEN";
+      const key = params.get("t") || "";
+      const socket = io();
+
+      const buttons = [...document.querySelectorAll(".spell-button")];
+      const status = document.getElementById("status");
+      const scaryPopup = document.getElementById("scaryPopup");
+      const experienceModal = document.getElementById("experienceModal");
+      const immersiveOption = document.getElementById("immersiveOption");
+      const parentalOption = document.getElementById("parentalOption");
+
+      let cooldownMs = 0;
+      let locked = false;
+      let isParentalMode = false;
+      let cooldownTimer;
+      let lastClickTime = 0;
+      const DEBOUNCE_MS = 800; // Debounce time in milliseconds
+
+      // Experience selection modal logic
+      function showExperienceModal() {
+        const savedChoice = localStorage.getItem("halloweenExperience");
+        if (!savedChoice) {
+          experienceModal.style.display = "flex";
+        } else {
+          isParentalMode = savedChoice === "parental";
+          setupExperienceMode();
+        }
+      }
+
+      function hideExperienceModal() {
+        experienceModal.classList.add("hidden");
+        setTimeout(() => {
+          experienceModal.style.display = "none";
+        }, 500);
+      }
+
+      function setupExperienceMode() {
+        if (isParentalMode) {
+          // Hide the halloween button in parental mode
+          const halloweenButton = document.querySelector(
+            '[data-theme="halloween"]'
+          );
+          if (halloweenButton) {
+            halloweenButton.style.display = "none";
+          }
+        }
+      }
+
+      function selectExperience(mode) {
+        isParentalMode = mode === "parental";
+        localStorage.setItem("halloweenExperience", mode);
+        setupExperienceMode();
+        hideExperienceModal();
+      }
+
+      // Scary popup timing
+      let lastScaryPopup = 0;
+      const MIN_SCARY_INTERVAL = 2 * 60 * 1000; // 2 minutes in milliseconds
+      let themeAudio = null;
+      let enhancedFlickerTimeout = null;
+      let enhancedFlickerInterval = null;
+      let isEnhancedFlickering = false;
+      let buttonClickTimeout = null;
+
+      // Enhanced status messages
+      const statusMessages = {
+        locked: "The spirits are resting... ⚰️",
+        cooldown: "The ritual is still active... 🔮",
+        casting: "Casting the spell... ✨",
+        success: "The spirits have been summoned! 👻",
+        error: "The ritual failed... try again 🔮",
+        knock: "Knock on the door... if you dare... 👹",
+        enhanced: "The spirits are restless... something stirs... 👻",
+      };
+
+      function setDisabled(disabled, reason = "") {
+        buttons.forEach((b) => {
+          b.classList.toggle("disabled", disabled);
+          if (disabled) {
+            b.style.cursor = "not-allowed";
+          } else {
+            b.style.cursor = "pointer";
+          }
+        });
+
+        if (disabled && reason) {
+          status.textContent = reason;
+          status.classList.add("cooldown");
+        } else if (!disabled) {
+          status.textContent = "";
+          status.classList.remove("cooldown");
+        }
+      }
+
+      function showStatus(message, duration = 2000) {
+        status.textContent = message;
+        status.classList.add("cooldown");
+        setTimeout(() => {
+          status.textContent = "";
+          status.classList.remove("cooldown");
+        }, duration);
+      }
+
+      function debounceClick(callback) {
+        return function (event) {
+          const now = Date.now();
+          if (now - lastClickTime < DEBOUNCE_MS) {
+            showStatus("The spirits need time to respond... 🔮", 1000);
+            return;
+          }
+          lastClickTime = now;
+          callback(event);
+        };
+      }
+
+      // Add visual feedback for button clicks
+      function addClickEffect(button) {
+        button.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          button.style.transform = "";
+        }, 150);
+      }
+
+      socket.on("connect", () => {
+        socket.emit("join", { room, role: "control", key });
+        showStatus("Connected to the spirit realm... 🔮", 1500);
+      });
+
+      socket.on("state", (s) => {
+        locked = !!s.locked;
+        cooldownMs = s.cooldownMs || 0;
+
+        if (locked) {
+          setDisabled(true, statusMessages.locked);
+        } else if (cooldownMs > 0) {
+          const end = Date.now() + cooldownMs;
+          clearInterval(cooldownTimer);
+          cooldownTimer = setInterval(() => {
+            const left = Math.max(0, end - Date.now());
+            status.textContent = `${statusMessages.cooldown} ${Math.ceil(
+              left / 1000
+            )}s`;
+            if (left <= 0) {
+              clearInterval(cooldownTimer);
+              setDisabled(false);
+            }
+          }, 200);
+          setDisabled(true, statusMessages.cooldown);
+        } else {
+          setDisabled(false);
+        }
+      });
+
+      buttons.forEach((btn) => {
+        const debouncedClick = debounceClick(() => {
+          if (locked || btn.classList.contains("disabled")) return;
+
+          // Visual feedback
+          addClickEffect(btn);
+          showStatus(statusMessages.casting, 1000);
+
+          // Send the spell
+          socket.emit("theme:set", { room, theme: btn.dataset.theme });
+
+          // Update active state
+          buttons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          // Clear any existing button click timeout
+          if (buttonClickTimeout) {
+            clearTimeout(buttonClickTimeout);
+          }
+
+          // Start enhanced sequence for all buttons (unless in parental mode)
+          if (!isEnhancedFlickering && !isParentalMode) {
+            if (btn.dataset.theme === "halloween") {
+              // Immediate enhanced sequence for halloween theme (with popup image)
+              playThemeAudio();
+              startEnhancedFlickering();
+            } else {
+              // 6 second delay for other themes (flickering without popup image)
+              buttonClickTimeout = setTimeout(() => {
+                if (!isEnhancedFlickering) {
+                  playThemeAudio();
+                  startEnhancedFlickering();
+                }
+              }, 6000);
+            }
+          }
+
+          // Success feedback
+          setTimeout(() => {
+            showStatus(statusMessages.success, 1500);
+            // Maybe trigger scary popup after successful spell
+            maybeTriggerScaryPopup();
+          }, 500);
+        });
+
+        btn.onclick = debouncedClick;
+
+        // Add keyboard support
+        btn.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            debouncedClick();
+          }
+        });
+      });
+
+      // Play theme audio function
+      function playThemeAudio() {
+        try {
+          // Stop any existing theme audio
+          if (themeAudio) {
+            themeAudio.pause();
+            themeAudio.currentTime = 0;
+          }
+
+          // Create new theme audio
+          themeAudio = new Audio("/theme.mp3");
+          themeAudio.volume = 0.7;
+          themeAudio.loop = false; // Play once until the end
+
+          // Play the theme
+          themeAudio.play().catch((e) => {
+            console.warn("Could not play theme audio:", e);
+          });
+        } catch (e) {
+          console.warn("Theme audio failed:", e);
+        }
+      }
+
+      // Start enhanced flickering for 20 seconds
+      function startEnhancedFlickering() {
+        // Clear any existing enhanced flicker timeout and interval
+        if (enhancedFlickerTimeout) {
+          clearTimeout(enhancedFlickerTimeout);
+        }
+        if (enhancedFlickerInterval) {
+          clearInterval(enhancedFlickerInterval);
+        }
+
+        isEnhancedFlickering = true;
+
+        // Add enhanced flicker class to body
+        document.body.classList.add("enhanced-flicker");
+
+        // Show knock message
+        showStatus(statusMessages.knock, 5000);
+
+        // Show frequent popups during enhanced flickering (every 3-5 seconds)
+        enhancedFlickerInterval = setInterval(() => {
+          if (isEnhancedFlickering) {
+            // 60% chance of popup every 3-5 seconds
+            if (Math.random() < 0.6) {
+              showScaryPopup(true); // Force popup during enhanced period
+              showStatus(statusMessages.enhanced, 2000);
+            }
+          }
+        }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
+
+        // Remove enhanced flicker after 20 seconds
+        enhancedFlickerTimeout = setTimeout(() => {
+          document.body.classList.remove("enhanced-flicker");
+          isEnhancedFlickering = false;
+          if (enhancedFlickerInterval) {
+            clearInterval(enhancedFlickerInterval);
+            enhancedFlickerInterval = null;
+          }
+          enhancedFlickerTimeout = null;
+        }, 20000);
+      }
+
+      // Scary popup functionality
+      function showScaryPopup(force = false) {
+        if (!scaryPopup) return;
+
+        // Only show the popup image during enhanced flickering (12+ button sequence)
+        if (!isEnhancedFlickering) {
+          return;
+        }
+
+        // Check if enough time has passed since last popup (unless forced)
+        const now = Date.now();
+        if (!force && now - lastScaryPopup < MIN_SCARY_INTERVAL) {
+          return;
+        }
+
+        lastScaryPopup = now;
+
+        // Show the popup with flicker effect
+        scaryPopup.classList.add("show", "flicker");
+
+        // Hide after the flicker animation
+        setTimeout(() => {
+          scaryPopup.classList.remove("show", "flicker");
+        }, 1200);
+      }
+
+      // Function to show just text messages (for non-enhanced sequences)
+      function showScaryText() {
+        const flickerMessages = [
+          "The spirits are watching... 👁️",
+          "Something moves in the shadows... 🌑",
+          "The veil between worlds grows thin... 🔮",
+          "Ancient forces stir... ⚡",
+        ];
+        const message =
+          flickerMessages[Math.floor(Math.random() * flickerMessages.length)];
+        showStatus(message, 5000);
+      }
+
+      // Random scary popup trigger
+      function triggerRandomScaryPopup() {
+        const now = Date.now();
+        const timeSinceLastPopup = now - lastScaryPopup;
+
+        // If it's been more than 2 minutes, force a popup
+        if (timeSinceLastPopup >= MIN_SCARY_INTERVAL) {
+          showScaryPopup(true);
+        } else {
+          // Otherwise, random chance (5% chance every 10 seconds)
+          if (Math.random() < 0.05) {
+            showScaryPopup();
+          }
+        }
+      }
+
+      // Trigger scary text on button clicks (10% chance)
+      function maybeTriggerScaryPopup() {
+        if (Math.random() < 0.1) {
+          setTimeout(() => {
+            showScaryText();
+          }, Math.random() * 2000 + 500); // Random delay between 0.5-2.5 seconds
+        }
+      }
+
+      // Add some spooky ambient effects
+      document.addEventListener("DOMContentLoaded", () => {
+        // Initialize experience modal
+        showExperienceModal();
+
+        // Add event listeners for modal options
+        immersiveOption.addEventListener("click", () => {
+          selectExperience("immersive");
+        });
+
+        parentalOption.addEventListener("click", () => {
+          selectExperience("parental");
+        });
+
+        // Randomly flicker the status text occasionally
+        setInterval(() => {
+          if (Math.random() < 0.1 && !status.textContent) {
+            showScaryText();
+          }
+        }, 8000);
+
+        // No random popups - only button-triggered sequences
+
+        // Mobile-specific optimizations
+        if ("ontouchstart" in window) {
+          // Prevent zoom on double tap for buttons
+          buttons.forEach((btn) => {
+            btn.addEventListener("touchend", (e) => {
+              e.preventDefault();
+            });
+          });
+
+          // Add haptic feedback if available
+          function addHapticFeedback() {
+            if (navigator.vibrate) {
+              navigator.vibrate(50); // Short vibration
+            }
+          }
+
+          // Add haptic feedback to button clicks
+          buttons.forEach((btn) => {
+            btn.addEventListener("touchstart", addHapticFeedback);
+          });
+
+          // Optimize for mobile viewport
+          const viewport = document.querySelector('meta[name="viewport"]');
+          if (viewport) {
+            viewport.setAttribute(
+              "content",
+              "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+            );
+          }
+
+          // Prevent pull-to-refresh on mobile
+          document.addEventListener(
+            "touchmove",
+            (e) => {
+              if (e.touches.length > 1) {
+                e.preventDefault();
+              }
+            },
+            { passive: false }
+          );
+
+          // Add touch-friendly status messages
+          showStatus("Touch the spells to cast them... 🔮", 3000);
+        }
+
+        // Handle orientation changes
+        window.addEventListener("orientationchange", () => {
+          setTimeout(() => {
+            // Recalculate layout after orientation change
+            window.scrollTo(0, 0);
+          }, 100);
+        });
+
+        // Prevent context menu on long press for buttons
+        buttons.forEach((btn) => {
+          btn.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
