@@ -1,5 +1,8 @@
-node_modules/
-dist/
-.env
+node_modules
+npm-debug.log
+dist/*.map
+.git
+.gitignore
 .DS_Store
-*.log
+tmp
+coverage
