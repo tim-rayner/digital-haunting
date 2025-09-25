@@ -77,7 +77,13 @@ io.on("connection", (socket) => {
   socket.on("theme:get", (roomId: string) => {
     if (roomId !== ROOM) return;
     const current = lastThemeByRoom.get(ROOM) ?? DEFAULT_THEME;
+    console.log("[server] theme:get requested, sending:", current);
     socket.emit("theme:current", { theme: current, at: Date.now() });
+  });
+
+  // Add heartbeat to keep connections alive
+  socket.on("ping", () => {
+    socket.emit("pong", { at: Date.now() });
   });
 
   socket.on("theme:set", (msg: { room: string; theme: string }) => {

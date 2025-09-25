@@ -1125,14 +1125,38 @@
       socket.on('connect', () => {
         console.log('[control] connected; join', { room, hasKey: !!key });
         socket.emit('join', { room, role:'control', key });
-        // resync selected button on reconnect
-        socket.emit('theme:get', room);
+        
+        // Wait a moment for join to complete, then request state
+        setTimeout(() => {
+          console.log('[control] requesting current state after connect');
+          socket.emit('theme:get', room);
+        }, 100);
+        
         showStatus("Connected to the spirit realm... 🔮", 1500);
       });
 
+      // Add heartbeat to keep connection alive
+      setInterval(() => {
+        if (socket.connected) {
+          socket.emit('ping');
+        }
+      }, 10000); // Every 10 seconds
+
       socket.on('theme:current', ({ theme }) => {
+        console.log('[control] received theme:current', theme);
         if (!theme) return;
-        buttons.forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+        
+        // Clear all active states first
+        buttons.forEach(b => b.classList.remove('active'));
+        
+        // Set the correct active state
+        const activeButton = buttons.find(b => b.dataset.theme === theme);
+        if (activeButton) {
+          activeButton.classList.add('active');
+          console.log('[control] set active button:', theme);
+        } else {
+          console.warn('[control] no button found for theme:', theme);
+        }
       });
 
       socket.on('theme:ack', ({ theme }) => console.log('[control] ack', theme));
@@ -1144,6 +1168,28 @@
         } else {
           showStatus("");
         }
+      });
+
+      // Enhanced error handling and reconnection
+      socket.on('connect_error', (error) => {
+        console.warn('[control] connection error:', error);
+        showStatus("Connection lost... reconnecting... 🔮", 2000);
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.warn('[control] disconnected:', reason);
+        showStatus("Disconnected from spirit realm... 🔮", 2000);
+      });
+
+      socket.on('reconnect', (attemptNumber) => {
+        console.log('[control] reconnected after', attemptNumber, 'attempts');
+        showStatus("Reconnected to spirit realm! 🔮", 1500);
+        
+        // Force state sync after reconnection
+        setTimeout(() => {
+          console.log('[control] forcing state sync after reconnect');
+          socket.emit('theme:get', room);
+        }, 500);
       });
 
       // Function to handle button click/touch

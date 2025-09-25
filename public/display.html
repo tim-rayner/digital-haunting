@@ -148,21 +148,50 @@
           show(localDefault);
         }
 
-        socket.on("connect", () => {
-          console.log("[display] connected; joining", room);
-          socket.emit("join", { room, role: "display" });
-          // explicit pull in case we connected mid-broadcast
-          socket.emit("theme:get", room);
-        });
+         socket.on("connect", () => {
+           console.log("[display] connected; joining", room);
+           socket.emit("join", { room, role: "display" });
+           
+           // Wait for join to complete, then request state
+           setTimeout(() => {
+             console.log("[display] requesting current state after connect");
+             socket.emit("theme:get", room);
+           }, 100);
+         });
+
+         // Add heartbeat to keep connection alive
+         setInterval(() => {
+           if (socket.connected) {
+             socket.emit("ping");
+           }
+         }, 10000); // Every 10 seconds
 
         socket.on("theme:current", ({ theme }) => {
-          if (theme && theme !== currentTheme) show(theme);
+          console.log("[display] received theme:current", theme);
+          if (theme && theme !== currentTheme) {
+            console.log("[display] switching from", currentTheme, "to", theme);
+            show(theme);
+          }
         });
 
-        socket.on("connect_error", (e) =>
-          console.warn("[display] connect_error", e)
-        );
-        socket.on("disconnect", (r) => console.warn("[display] disconnect", r));
+        // Enhanced error handling and reconnection
+        socket.on("connect_error", (e) => {
+          console.warn("[display] connect_error", e);
+        });
+        
+        socket.on("disconnect", (r) => {
+          console.warn("[display] disconnect", r);
+        });
+
+        socket.on("reconnect", (attemptNumber) => {
+          console.log("[display] reconnected after", attemptNumber, "attempts");
+          
+          // Force state sync after reconnection
+          setTimeout(() => {
+            console.log("[display] forcing state sync after reconnect");
+            socket.emit("theme:get", room);
+          }, 500);
+        });
       });
     </script>
   </body>
