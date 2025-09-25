@@ -958,13 +958,65 @@
       const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
 
       const buttons = [...document.querySelectorAll('button[data-theme]')];
+      const status = document.getElementById("status");
+      const scaryPopup = document.getElementById("scaryPopup");
+      const experienceModal = document.getElementById("experienceModal");
+      const immersiveOption = document.getElementById("immersiveOption");
+      const parentalOption = document.getElementById("parentalOption");
+
       let locked = false;
+      let isParentalMode = false;
+
+      // Experience selection modal logic
+      function showExperienceModal() {
+        const savedChoice = localStorage.getItem("halloweenExperience");
+        if (!savedChoice) {
+          experienceModal.style.display = "flex";
+        } else {
+          isParentalMode = savedChoice === "parental";
+          setupExperienceMode();
+        }
+      }
+
+      function hideExperienceModal() {
+        experienceModal.classList.add("hidden");
+        setTimeout(() => {
+          experienceModal.style.display = "none";
+        }, 500);
+      }
+
+      function setupExperienceMode() {
+        if (isParentalMode) {
+          // Hide the halloween button in parental mode
+          const halloweenButton = document.querySelector('[data-theme="halloween"]');
+          if (halloweenButton) {
+            halloweenButton.style.display = "none";
+          }
+        }
+      }
+
+      function selectExperience(mode) {
+        isParentalMode = mode === "parental";
+        localStorage.setItem("halloweenExperience", mode);
+        setupExperienceMode();
+        hideExperienceModal();
+      }
+
+      function showStatus(message, duration = 2000) {
+        status.textContent = message;
+        status.classList.add("cooldown");
+        setTimeout(() => {
+          status.textContent = "";
+          status.classList.remove("cooldown");
+        }, duration);
+      }
 
       socket.on('connect', () => {
         console.log('[control] connected; join', { room, hasKey: !!key });
         socket.emit('join', { room, role:'control', key });
         // resync selected button on reconnect
         socket.emit('theme:get', room);
+        showStatus("Connected to the spirit realm... 🔮", 1500);
       });
 
       socket.on('theme:current', ({ theme }) => {
@@ -973,7 +1025,15 @@
       });
 
       socket.on('theme:ack', ({ theme }) => console.log('[control] ack', theme));
-      socket.on('state', s => { locked = !!s.locked; });
+      
+      socket.on('state', s => { 
+        locked = !!s.locked;
+        if (locked) {
+          showStatus("The spirits are resting... ⚰️");
+        } else {
+          showStatus("");
+        }
+      });
 
       buttons.forEach(btn => {
         btn.onclick = () => {
@@ -997,7 +1057,47 @@
 
           buttons.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+          showStatus("The spirits have been summoned! 👻", 1500);
         };
+      });
+
+      // Initialize experience modal and event listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        showExperienceModal();
+
+        // Add event listeners for modal options
+        immersiveOption.addEventListener("click", () => {
+          selectExperience("immersive");
+        });
+
+        parentalOption.addEventListener("click", () => {
+          selectExperience("parental");
+        });
+
+        // Mobile-specific optimizations
+        if ("ontouchstart" in window) {
+          // Prevent zoom on double tap for buttons
+          buttons.forEach((btn) => {
+            btn.addEventListener("touchend", (e) => {
+              e.preventDefault();
+            });
+          });
+
+          // Add haptic feedback if available
+          function addHapticFeedback() {
+            if (navigator.vibrate) {
+              navigator.vibrate(50); // Short vibration
+            }
+          }
+
+          // Add haptic feedback to button clicks
+          buttons.forEach((btn) => {
+            btn.addEventListener("touchstart", addHapticFeedback);
+          });
+
+          // Add touch-friendly status messages
+          showStatus("Touch the spells to cast them... 🔮", 3000);
+        }
       });
     </script>
   </body>
