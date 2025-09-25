@@ -1047,30 +1047,56 @@
         }
       });
 
+      // Function to handle button click/touch
+      function handleButtonPress(btn) {
+        if (locked) return;
+        const theme = btn.dataset.theme;
+        console.log('[control] set', theme);
+        socket.emit('theme:set', { room, theme });
+
+        // watchdog: if no ack/current in 2s, request again
+        const start = Date.now();
+        const timer = setTimeout(() => {
+          console.warn('[control] no response; requesting state');
+          socket.emit('theme:get', room);
+        }, 2000);
+
+        const clear = () => clearTimeout(timer);
+        const onAck = () => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
+        const onCur = () => { if (Date.now() - start < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
+        socket.on('theme:ack', onAck);
+        socket.on('theme:current', onCur);
+
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        showStatus("The spirits have been summoned! 👻", 1500);
+      }
+
       buttons.forEach(btn => {
-        btn.onclick = () => {
-          if (locked) return;
-          const theme = btn.dataset.theme;
-          console.log('[control] set', theme);
-          socket.emit('theme:set', { room, theme });
+        // Handle click events (desktop)
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          handleButtonPress(btn);
+        });
 
-          // watchdog: if no ack/current in 2s, request again
-          const start = Date.now();
-          const timer = setTimeout(() => {
-            console.warn('[control] no response; requesting state');
-            socket.emit('theme:get', room);
-          }, 2000);
+        // Handle touch events (mobile)
+        btn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          handleButtonPress(btn);
+        });
 
-          const clear = () => clearTimeout(timer);
-          const onAck = () => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-          const onCur = () => { if (Date.now() - start < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-          socket.on('theme:ack', onAck);
-          socket.on('theme:current', onCur);
+        // Prevent default touch behaviors that might interfere
+        btn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+        });
 
-          buttons.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          showStatus("The spirits have been summoned! 👻", 1500);
-        };
+        // Add keyboard support
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleButtonPress(btn);
+          }
+        });
       });
 
       // Initialize experience modal and event listeners
@@ -1078,23 +1104,29 @@
         showExperienceModal();
 
         // Add event listeners for modal options
-        immersiveOption.addEventListener("click", () => {
+        immersiveOption.addEventListener("click", (e) => {
+          e.preventDefault();
           selectExperience("immersive");
         });
 
-        parentalOption.addEventListener("click", () => {
+        parentalOption.addEventListener("click", (e) => {
+          e.preventDefault();
+          selectExperience("parental");
+        });
+
+        // Add touch support for modal options
+        immersiveOption.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          selectExperience("immersive");
+        });
+
+        parentalOption.addEventListener("touchstart", (e) => {
+          e.preventDefault();
           selectExperience("parental");
         });
 
         // Mobile-specific optimizations
         if ("ontouchstart" in window) {
-          // Prevent zoom on double tap for buttons
-          buttons.forEach((btn) => {
-            btn.addEventListener("touchend", (e) => {
-              e.preventDefault();
-            });
-          });
-
           // Add haptic feedback if available
           function addHapticFeedback() {
             if (navigator.vibrate) {
