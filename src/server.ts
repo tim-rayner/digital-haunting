@@ -29,6 +29,8 @@ const io = new Server(app.server, {
 
 const ROOM = process.env.ROOM || "HALLOWEEN";
 const PARTY_KEY = process.env.PARTY_KEY || "changeme";
+// config
+const DEFAULT_THEME = process.env.DEFAULT_THEME || "ghosts";
 // Cooldown removed
 const PORT = Number(process.env.PORT || 8080);
 
@@ -48,6 +50,11 @@ function tooFast(id: string, ratePerSec = 0.8, burst = 2) {
 
 let locked = false;
 
+// before io.on("connection") ends, ensure the room has an initial theme:
+if (!lastThemeByRoom.has(ROOM)) {
+  lastThemeByRoom.set(ROOM, DEFAULT_THEME);
+}
+
 io.on("connection", (socket) => {
   let joined = false;
 
@@ -61,20 +68,16 @@ io.on("connection", (socket) => {
       socket.join(ROOM);
       joined = true;
 
-      const last = lastThemeByRoom.get(ROOM);
-      if (last) socket.emit("theme:current", { theme: last, at: Date.now() });
-
-      socket.emit("state", {
-        locked,
-        cooldownMs: 0,
-      });
+      const current = lastThemeByRoom.get(ROOM) ?? DEFAULT_THEME;
+      socket.emit("theme:current", { theme: current, at: Date.now() });
+      socket.emit("state", { locked, cooldownMs: 0 });
     }
   );
 
-  socket.on("theme:get", (room: string) => {
-    if (room !== ROOM) return;
-    const last = lastThemeByRoom.get(ROOM);
-    socket.emit("theme:current", { theme: last ?? null, at: Date.now() });
+  socket.on("theme:get", (roomId: string) => {
+    if (roomId !== ROOM) return;
+    const current = lastThemeByRoom.get(ROOM) ?? DEFAULT_THEME;
+    socket.emit("theme:current", { theme: current, at: Date.now() });
   });
 
   socket.on("theme:set", (msg: { room: string; theme: string }) => {

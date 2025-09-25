@@ -35,6 +35,7 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/devil-talks.mp4"
     ></video>
     <video
@@ -42,6 +43,7 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/ghost-girl.mp4"
     ></video>
     <video
@@ -49,6 +51,7 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/realistic-zombie.mp4"
     ></video>
     <video
@@ -56,6 +59,7 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/ghost-wall.mp4"
     ></video>
     <video
@@ -64,6 +68,7 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/zombie-power-cut.mp4"
     ></video>
     <video
@@ -71,18 +76,24 @@
       autoplay
       muted
       playsinline
+      preload="auto"
       src="/loops/zombie-walk.mp4"
     ></video>
-    <video id="halloween" muted playsinline src="/loops/halloween.mp4"></video>
+    <video id="halloween" muted playsinline preload="auto" src="/loops/halloween.mp4"></video>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         const q = new URLSearchParams(location.search);
-        const room = q.get('room') || 'HALLOWEEN';
+        const urlRoom = q.get('room');
+        const room = urlRoom || localStorage.getItem('lastRoom') || 'HALLOWEEN';
+        localStorage.setItem('lastRoom', room);
+
         const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
 
-        const vids = Object.fromEntries(Array.from(document.querySelectorAll('video[id]')).map(v => [v.id, v]));
+        const vids = Object.fromEntries([...document.querySelectorAll('video[id]')].map(v => [v.id, v]));
+        Object.values(vids).forEach(v => { v.preload = 'auto'; v.muted = true; v.play?.().catch(()=>{}); });
+
         let currentTheme = null;
 
         function show(theme){
@@ -90,28 +101,28 @@
           Object.values(vids).forEach(v => v.classList.remove('show'));
           const v = vids[theme];
           v.classList.add('show');
-          v.play?.().catch(()=>{});
+          setTimeout(() => v.play?.().catch(()=>{}), 0); // nudge playback after paint
           currentTheme = theme;
-          console.log('[display] showing theme', theme);
+          console.log('[display] showing', theme);
         }
 
-        // warm up
-        Object.values(vids).forEach(v => v.play?.().catch(()=>{}));
+        // Local default: first video id
+        const localDefault = Object.keys(vids)[0];
+        if (localDefault) { show(localDefault); }
 
         socket.on('connect', () => {
-          console.log('[display] connected, joining', room);
+          console.log('[display] connected; joining', room);
           socket.emit('join', { room, role:'display' });
-          // pull the latest state explicitly in case we missed any broadcast while reconnecting
+          // explicit pull in case we connected mid-broadcast
           socket.emit('theme:get', room);
         });
 
         socket.on('theme:current', ({ theme }) => {
-          console.log('[display] theme:current', theme);
           if (theme && theme !== currentTheme) show(theme);
         });
 
-        socket.on('connect_error', err => console.warn('[display] connect_error', err));
-        socket.on('disconnect', reason => console.warn('[display] disconnect', reason));
+        socket.on('connect_error', e => console.warn('[display] connect_error', e));
+        socket.on('disconnect', r => console.warn('[display] disconnect', r));
       });
     </script>
   </body>

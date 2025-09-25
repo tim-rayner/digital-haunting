@@ -943,167 +943,37 @@
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
       const params = new URLSearchParams(location.search);
-      const room = params.get("room") || "HALLOWEEN";
-      const key  = params.get("t") || '';
+      const urlRoom = params.get('room');
+      const urlKey  = params.get('t');
+
+      const storedRoom = localStorage.getItem('lastRoom');
+      const storedKey  = localStorage.getItem('partyKey');
+
+      const room = (urlRoom || storedRoom || 'HALLOWEEN');
+      const key  = (urlKey  || storedKey  || '');
+
+      localStorage.setItem('lastRoom', room);
+      if (key) localStorage.setItem('partyKey', key);
+
       const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
 
-      const buttons = [...document.querySelectorAll(".spell-button")];
-      const status = document.getElementById("status");
-      const scaryPopup = document.getElementById("scaryPopup");
-      const experienceModal = document.getElementById("experienceModal");
-      const immersiveOption = document.getElementById("immersiveOption");
-      const parentalOption = document.getElementById("parentalOption");
-
-      let cooldownMs = 0;
+      const buttons = [...document.querySelectorAll('button[data-theme]')];
       let locked = false;
-      let isParentalMode = false;
-      let cooldownTimer;
-      let lastClickTime = 0;
-      const DEBOUNCE_MS = 800; // Debounce time in milliseconds
 
-      // Experience selection modal logic
-      function showExperienceModal() {
-        const savedChoice = localStorage.getItem("halloweenExperience");
-        if (!savedChoice) {
-          experienceModal.style.display = "flex";
-        } else {
-          isParentalMode = savedChoice === "parental";
-          setupExperienceMode();
-        }
-      }
+      socket.on('connect', () => {
+        console.log('[control] connected; join', { room, hasKey: !!key });
+        socket.emit('join', { room, role:'control', key });
+        // resync selected button on reconnect
+        socket.emit('theme:get', room);
+      });
 
-      function hideExperienceModal() {
-        experienceModal.classList.add("hidden");
-        setTimeout(() => {
-          experienceModal.style.display = "none";
-        }, 500);
-      }
-
-      function setupExperienceMode() {
-        if (isParentalMode) {
-          // Hide the halloween button in parental mode
-          const halloweenButton = document.querySelector(
-            '[data-theme="halloween"]'
-          );
-          if (halloweenButton) {
-            halloweenButton.style.display = "none";
-          }
-        }
-      }
-
-      function selectExperience(mode) {
-        isParentalMode = mode === "parental";
-        localStorage.setItem("halloweenExperience", mode);
-        setupExperienceMode();
-        hideExperienceModal();
-      }
-
-      // Scary popup timing
-      let lastScaryPopup = 0;
-      const MIN_SCARY_INTERVAL = 2 * 60 * 1000; // 2 minutes in milliseconds
-      let themeAudio = null;
-      let enhancedFlickerTimeout = null;
-      let enhancedFlickerInterval = null;
-      let isEnhancedFlickering = false;
-      let buttonClickTimeout = null;
-
-      // Enhanced status messages
-      const statusMessages = {
-        locked: "The spirits are resting... ⚰️",
-        cooldown: "The ritual is still active... 🔮",
-        casting: "Casting the spell... ✨",
-        success: "The spirits have been summoned! 👻",
-        error: "The ritual failed... try again 🔮",
-        knock: "Knock on the door... if you dare... 👹",
-        enhanced: "The spirits are restless... something stirs... 👻",
-      };
-
-      function setDisabled(disabled, reason = "") {
-        buttons.forEach((b) => {
-          b.classList.toggle("disabled", disabled);
-          if (disabled) {
-            b.style.cursor = "not-allowed";
-          } else {
-            b.style.cursor = "pointer";
-          }
-        });
-
-        if (disabled && reason) {
-          status.textContent = reason;
-          status.classList.add("cooldown");
-        } else if (!disabled) {
-          status.textContent = "";
-          status.classList.remove("cooldown");
-        }
-      }
-
-      function showStatus(message, duration = 2000) {
-        status.textContent = message;
-        status.classList.add("cooldown");
-        setTimeout(() => {
-          status.textContent = "";
-          status.classList.remove("cooldown");
-        }, duration);
-      }
-
-      function debounceClick(callback) {
-        return function (event) {
-          const now = Date.now();
-          if (now - lastClickTime < DEBOUNCE_MS) {
-            showStatus("The spirits need time to respond... 🔮", 1000);
-            return;
-          }
-          lastClickTime = now;
-          callback(event);
-        };
-      }
-
-      // Add visual feedback for button clicks
-      function addClickEffect(button) {
-        button.style.transform = "scale(0.95)";
-        setTimeout(() => {
-          button.style.transform = "";
-        }, 150);
-      }
-
-      socket.on("connect", () => socket.emit("join", { room, role: "control", key }));
-
-      // re-sync UI state on reconnect
-      socket.on("connect", () => socket.emit("theme:get", room));
-      socket.on("theme:current", ({ theme }) => {
+      socket.on('theme:current', ({ theme }) => {
         if (!theme) return;
-        buttons.forEach(b => b.classList.toggle("active", b.dataset.theme === theme));
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
       });
 
-      // ack path for confidence
-      socket.on("theme:ack", ({ theme }) => {
-        console.log("[control] ack", theme);
-      });
-
-      socket.on("state", (s) => {
-        locked = !!s.locked;
-        cooldownMs = s.cooldownMs || 0;
-
-        if (locked) {
-          setDisabled(true, statusMessages.locked);
-        } else if (cooldownMs > 0) {
-          const end = Date.now() + cooldownMs;
-          clearInterval(cooldownTimer);
-          cooldownTimer = setInterval(() => {
-            const left = Math.max(0, end - Date.now());
-            status.textContent = `${statusMessages.cooldown} ${Math.ceil(
-              left / 1000
-            )}s`;
-            if (left <= 0) {
-              clearInterval(cooldownTimer);
-              setDisabled(false);
-            }
-          }, 200);
-          setDisabled(true, statusMessages.cooldown);
-        } else {
-          setDisabled(false);
-        }
-      });
+      socket.on('theme:ack', ({ theme }) => console.log('[control] ack', theme));
+      socket.on('state', s => { locked = !!s.locked; });
 
       buttons.forEach(btn => {
         btn.onclick = () => {
@@ -1112,235 +982,22 @@
           console.log('[control] set', theme);
           socket.emit('theme:set', { room, theme });
 
-          // Watchdog: if no ack nor theme:current within 2s, ask for it
-          const started = Date.now();
+          // watchdog: if no ack/current in 2s, request again
+          const start = Date.now();
           const timer = setTimeout(() => {
-            console.warn('[control] no ack within 2s, requesting state');
+            console.warn('[control] no response; requesting state');
             socket.emit('theme:get', room);
           }, 2000);
 
           const clear = () => clearTimeout(timer);
-          const onAck = ({ theme: t }) => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-          const onCur = ({ theme: t }) => { if (Date.now()-started < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-
+          const onAck = () => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
+          const onCur = () => { if (Date.now() - start < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
           socket.on('theme:ack', onAck);
           socket.on('theme:current', onCur);
 
           buttons.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
         };
-      });
-
-      // Play theme audio function
-      function playThemeAudio() {
-        try {
-          // Stop any existing theme audio
-          if (themeAudio) {
-            themeAudio.pause();
-            themeAudio.currentTime = 0;
-          }
-
-          // Create new theme audio
-          themeAudio = new Audio("/theme.mp3");
-          themeAudio.volume = 0.7;
-          themeAudio.loop = false; // Play once until the end
-
-          // Play the theme
-          themeAudio.play().catch((e) => {
-            console.warn("Could not play theme audio:", e);
-          });
-        } catch (e) {
-          console.warn("Theme audio failed:", e);
-        }
-      }
-
-      // Start enhanced flickering for 20 seconds
-      function startEnhancedFlickering() {
-        // Clear any existing enhanced flicker timeout and interval
-        if (enhancedFlickerTimeout) {
-          clearTimeout(enhancedFlickerTimeout);
-        }
-        if (enhancedFlickerInterval) {
-          clearInterval(enhancedFlickerInterval);
-        }
-
-        isEnhancedFlickering = true;
-
-        // Add enhanced flicker class to body
-        document.body.classList.add("enhanced-flicker");
-
-        // Show knock message
-        showStatus(statusMessages.knock, 5000);
-
-        // Show frequent popups during enhanced flickering (every 3-5 seconds)
-        enhancedFlickerInterval = setInterval(() => {
-          if (isEnhancedFlickering) {
-            // 60% chance of popup every 3-5 seconds
-            if (Math.random() < 0.6) {
-              showScaryPopup(true); // Force popup during enhanced period
-              showStatus(statusMessages.enhanced, 2000);
-            }
-          }
-        }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
-
-        // Remove enhanced flicker after 20 seconds
-        enhancedFlickerTimeout = setTimeout(() => {
-          document.body.classList.remove("enhanced-flicker");
-          isEnhancedFlickering = false;
-          if (enhancedFlickerInterval) {
-            clearInterval(enhancedFlickerInterval);
-            enhancedFlickerInterval = null;
-          }
-          enhancedFlickerTimeout = null;
-        }, 20000);
-      }
-
-      // Scary popup functionality
-      function showScaryPopup(force = false) {
-        if (!scaryPopup) return;
-
-        // Only show the popup image during enhanced flickering (12+ button sequence)
-        if (!isEnhancedFlickering) {
-          return;
-        }
-
-        // Check if enough time has passed since last popup (unless forced)
-        const now = Date.now();
-        if (!force && now - lastScaryPopup < MIN_SCARY_INTERVAL) {
-          return;
-        }
-
-        lastScaryPopup = now;
-
-        // Show the popup with flicker effect
-        scaryPopup.classList.add("show", "flicker");
-
-        // Hide after the flicker animation
-        setTimeout(() => {
-          scaryPopup.classList.remove("show", "flicker");
-        }, 1200);
-      }
-
-      // Function to show just text messages (for non-enhanced sequences)
-      function showScaryText() {
-        const flickerMessages = [
-          "The spirits are watching... 👁️",
-          "Something moves in the shadows... 🌑",
-          "The veil between worlds grows thin... 🔮",
-          "Ancient forces stir... ⚡",
-        ];
-        const message =
-          flickerMessages[Math.floor(Math.random() * flickerMessages.length)];
-        showStatus(message, 5000);
-      }
-
-      // Random scary popup trigger
-      function triggerRandomScaryPopup() {
-        const now = Date.now();
-        const timeSinceLastPopup = now - lastScaryPopup;
-
-        // If it's been more than 2 minutes, force a popup
-        if (timeSinceLastPopup >= MIN_SCARY_INTERVAL) {
-          showScaryPopup(true);
-        } else {
-          // Otherwise, random chance (5% chance every 10 seconds)
-          if (Math.random() < 0.05) {
-            showScaryPopup();
-          }
-        }
-      }
-
-      // Trigger scary text on button clicks (10% chance)
-      function maybeTriggerScaryPopup() {
-        if (Math.random() < 0.1) {
-          setTimeout(() => {
-            showScaryText();
-          }, Math.random() * 2000 + 500); // Random delay between 0.5-2.5 seconds
-        }
-      }
-
-      // Add some spooky ambient effects
-      document.addEventListener("DOMContentLoaded", () => {
-        // Initialize experience modal
-        showExperienceModal();
-
-        // Add event listeners for modal options
-        immersiveOption.addEventListener("click", () => {
-          selectExperience("immersive");
-        });
-
-        parentalOption.addEventListener("click", () => {
-          selectExperience("parental");
-        });
-
-        // Randomly flicker the status text occasionally
-        setInterval(() => {
-          if (Math.random() < 0.1 && !status.textContent) {
-            showScaryText();
-          }
-        }, 8000);
-
-        // No random popups - only button-triggered sequences
-
-        // Mobile-specific optimizations
-        if ("ontouchstart" in window) {
-          // Prevent zoom on double tap for buttons
-          buttons.forEach((btn) => {
-            btn.addEventListener("touchend", (e) => {
-              e.preventDefault();
-            });
-          });
-
-          // Add haptic feedback if available
-          function addHapticFeedback() {
-            if (navigator.vibrate) {
-              navigator.vibrate(50); // Short vibration
-            }
-          }
-
-          // Add haptic feedback to button clicks
-          buttons.forEach((btn) => {
-            btn.addEventListener("touchstart", addHapticFeedback);
-          });
-
-          // Optimize for mobile viewport
-          const viewport = document.querySelector('meta[name="viewport"]');
-          if (viewport) {
-            viewport.setAttribute(
-              "content",
-              "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-            );
-          }
-
-          // Prevent pull-to-refresh on mobile
-          document.addEventListener(
-            "touchmove",
-            (e) => {
-              if (e.touches.length > 1) {
-                e.preventDefault();
-              }
-            },
-            { passive: false }
-          );
-
-          // Add touch-friendly status messages
-          showStatus("Touch the spells to cast them... 🔮", 3000);
-        }
-
-        // Handle orientation changes
-        window.addEventListener("orientationchange", () => {
-          setTimeout(() => {
-            // Recalculate layout after orientation change
-            window.scrollTo(0, 0);
-          }, 100);
-        });
-
-        // Prevent context menu on long press for buttons
-        buttons.forEach((btn) => {
-          btn.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-          });
-        });
       });
     </script>
   </body>
