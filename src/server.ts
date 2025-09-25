@@ -20,7 +20,12 @@ app.register(fastifyStatic, {
 app.get("/display", async (_, reply) => reply.sendFile("display.html"));
 app.get("/control", async (_, reply) => reply.sendFile("control.html"));
 
-const io = new Server(app.server, { cors: { origin: "*" } });
+const io = new Server(app.server, {
+  cors: { origin: "*" },
+  transports: ["websocket"],     // prefer pure WS
+  pingInterval: 20000,           // 20s
+  pingTimeout: 20000             // 20s
+});
 
 const ROOM = process.env.ROOM || "HALLOWEEN";
 const PARTY_KEY = process.env.PARTY_KEY || "changeme";
@@ -66,14 +71,24 @@ io.on("connection", (socket) => {
     }
   );
 
+  socket.on("theme:get", (room: string) => {
+    if (room !== ROOM) return;
+    const last = lastThemeByRoom.get(ROOM);
+    socket.emit("theme:current", { theme: last ?? null, at: Date.now() });
+  });
+
   socket.on("theme:set", (msg: { room: string; theme: string }) => {
+    console.log("[server] theme:set", msg);
     if (!joined || msg.room !== ROOM) return;
     if (locked) return;
     if (tooFast(socket.id)) return;
 
     lastThemeByRoom.set(ROOM, msg.theme);
+    // 1) broadcast to everyone
     io.to(ROOM).emit("theme:current", { theme: msg.theme, at: Date.now() });
-
+    // 2) ack sender so controller can confirm
+    socket.emit("theme:ack", { theme: msg.theme, at: Date.now() });
+    // cooldown/state emit stays as-is
     io.to(ROOM).emit("state", { locked, cooldownMs: 0 });
   });
 

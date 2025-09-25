@@ -944,8 +944,8 @@
     <script>
       const params = new URLSearchParams(location.search);
       const room = params.get("room") || "HALLOWEEN";
-      const key = params.get("t") || "";
-      const socket = io();
+      const key  = params.get("t") || '';
+      const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
 
       const buttons = [...document.querySelectorAll(".spell-button")];
       const status = document.getElementById("status");
@@ -1066,9 +1066,18 @@
         }, 150);
       }
 
-      socket.on("connect", () => {
-        socket.emit("join", { room, role: "control", key });
-        showStatus("Connected to the spirit realm... 🔮", 1500);
+      socket.on("connect", () => socket.emit("join", { room, role: "control", key }));
+
+      // re-sync UI state on reconnect
+      socket.on("connect", () => socket.emit("theme:get", room));
+      socket.on("theme:current", ({ theme }) => {
+        if (!theme) return;
+        buttons.forEach(b => b.classList.toggle("active", b.dataset.theme === theme));
+      });
+
+      // ack path for confidence
+      socket.on("theme:ack", ({ theme }) => {
+        console.log("[control] ack", theme);
       });
 
       socket.on("state", (s) => {
@@ -1096,60 +1105,30 @@
         }
       });
 
-      buttons.forEach((btn) => {
-        const debouncedClick = debounceClick(() => {
-          if (locked || btn.classList.contains("disabled")) return;
+      buttons.forEach(btn => {
+        btn.onclick = () => {
+          if (locked) return;
+          const theme = btn.dataset.theme;
+          console.log('[control] set', theme);
+          socket.emit('theme:set', { room, theme });
 
-          // Visual feedback
-          addClickEffect(btn);
-          showStatus(statusMessages.casting, 1000);
+          // Watchdog: if no ack nor theme:current within 2s, ask for it
+          const started = Date.now();
+          const timer = setTimeout(() => {
+            console.warn('[control] no ack within 2s, requesting state');
+            socket.emit('theme:get', room);
+          }, 2000);
 
-          // Send the spell
-          socket.emit("theme:set", { room, theme: btn.dataset.theme });
+          const clear = () => clearTimeout(timer);
+          const onAck = ({ theme: t }) => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
+          const onCur = ({ theme: t }) => { if (Date.now()-started < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
 
-          // Update active state
-          buttons.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
+          socket.on('theme:ack', onAck);
+          socket.on('theme:current', onCur);
 
-          // Clear any existing button click timeout
-          if (buttonClickTimeout) {
-            clearTimeout(buttonClickTimeout);
-          }
-
-          // Start enhanced sequence for all buttons (unless in parental mode)
-          if (!isEnhancedFlickering && !isParentalMode) {
-            if (btn.dataset.theme === "halloween") {
-              // Immediate enhanced sequence for halloween theme (with popup image)
-              playThemeAudio();
-              startEnhancedFlickering();
-            } else {
-              // 6 second delay for other themes (flickering without popup image)
-              buttonClickTimeout = setTimeout(() => {
-                if (!isEnhancedFlickering) {
-                  playThemeAudio();
-                  startEnhancedFlickering();
-                }
-              }, 6000);
-            }
-          }
-
-          // Success feedback
-          setTimeout(() => {
-            showStatus(statusMessages.success, 1500);
-            // Maybe trigger scary popup after successful spell
-            maybeTriggerScaryPopup();
-          }, 500);
-        });
-
-        btn.onclick = debouncedClick;
-
-        // Add keyboard support
-        btn.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            debouncedClick();
-          }
-        });
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
       });
 
       // Play theme audio function

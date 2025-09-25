@@ -77,121 +77,41 @@
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener('DOMContentLoaded', () => {
         const q = new URLSearchParams(location.search);
-        const room = q.get("room") || "HALLOWEEN";
-        const socket = io();
+        const room = q.get('room') || 'HALLOWEEN';
+        const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
 
-        // Collect the videos safely
-        const vids = {
-          "devil-talks": document.getElementById("devil-talks"),
-          "ghost-girl": document.getElementById("ghost-girl"),
-          "ghost-wall": document.getElementById("ghost-wall"),
-          "realistic-zombie": document.getElementById("realistic-zombie"),
-          "zombie-power-cut": document.getElementById("zombie-power-cut"),
-          "zombie-walk": document.getElementById("zombie-walk"),
-          halloween: document.getElementById("halloween"),
-        };
+        const vids = Object.fromEntries(Array.from(document.querySelectorAll('video[id]')).map(v => [v.id, v]));
+        let currentTheme = null;
 
-        // Default video to revert to
-        const DEFAULT_VIDEO = "zombie-power-cut";
-
-        // Warn if any are missing and add event listeners
-        Object.entries(vids).forEach(([k, v]) => {
-          if (!v) {
-            console.warn(`Missing <video id="${k}"> in display.html`);
-          } else {
-            console.log(`Found video for theme "${k}":`, v);
-            // Add event listeners to track video loading
-            v.addEventListener("loadstart", () =>
-              console.log(`Video ${k} started loading`)
-            );
-            v.addEventListener("canplay", () =>
-              console.log(`Video ${k} can play`)
-            );
-            v.addEventListener("error", (e) =>
-              console.error(`Video ${k} error:`, e)
-            );
-            v.addEventListener("play", () =>
-              console.log(`Video ${k} started playing`)
-            );
-            v.addEventListener("pause", () => console.log(`Video ${k} paused`));
-          }
-        });
-
-        function show(theme) {
-          console.log("show() called with theme:", theme);
+        function show(theme){
+          if (!theme || !vids[theme]) return;
+          Object.values(vids).forEach(v => v.classList.remove('show'));
           const v = vids[theme];
-          if (!v) {
-            console.warn("No video found for theme:", theme);
-            return; // bail if missing
-          }
-          console.log("Found video element:", v.id);
-
-          // Pause all videos and hide them
-          Object.values(vids).forEach((x) => {
-            if (x) {
-              x.classList.remove("show");
-              x.pause();
-            }
-          });
-
-          // Show and play the selected video
-          v.classList.add("show");
-          console.log("Added 'show' class to video:", v.id);
-
-          // All videos now play once and revert to default
-          v.currentTime = 0; // Start from beginning
-          v.play()
-            .then(() => {
-              console.log("Video started playing:", v.id);
-              // When video ends, revert to default video
-              v.addEventListener(
-                "ended",
-                () => {
-                  console.log(
-                    "Video ended, reverting to default:",
-                    DEFAULT_VIDEO
-                  );
-                  show(DEFAULT_VIDEO);
-                },
-                { once: true }
-              );
-            })
-            .catch((err) => {
-              console.error("Error playing video:", v.id, err);
-            });
+          v.classList.add('show');
+          v.play?.().catch(()=>{});
+          currentTheme = theme;
+          console.log('[display] showing theme', theme);
         }
 
-        // No warm up - videos will be played on demand
+        // warm up
+        Object.values(vids).forEach(v => v.play?.().catch(()=>{}));
 
-        // Enable autoplay on first user interaction
-        function enableAutoplay() {
-          console.log("Enabling autoplay after user interaction");
-          Object.values(vids).forEach((v) => {
-            if (v) {
-              v.muted = false; // Unmute for audio
-            }
-          });
-          // Remove the event listener after first interaction
-          document.removeEventListener("click", enableAutoplay);
-          document.removeEventListener("touchstart", enableAutoplay);
-        }
-
-        // Add event listeners for user interaction
-        document.addEventListener("click", enableAutoplay);
-        document.addEventListener("touchstart", enableAutoplay);
-
-        // Default theme
-        show("zombie-power-cut");
-
-        socket.on("connect", () =>
-          socket.emit("join", { room, role: "display" })
-        );
-        socket.on("theme:current", ({ theme }) => {
-          console.log("Received theme:current event with theme:", theme);
-          show(theme);
+        socket.on('connect', () => {
+          console.log('[display] connected, joining', room);
+          socket.emit('join', { room, role:'display' });
+          // pull the latest state explicitly in case we missed any broadcast while reconnecting
+          socket.emit('theme:get', room);
         });
+
+        socket.on('theme:current', ({ theme }) => {
+          console.log('[display] theme:current', theme);
+          if (theme && theme !== currentTheme) show(theme);
+        });
+
+        socket.on('connect_error', err => console.warn('[display] connect_error', err));
+        socket.on('disconnect', reason => console.warn('[display] disconnect', reason));
       });
     </script>
   </body>
