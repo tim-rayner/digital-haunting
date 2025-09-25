@@ -22,9 +22,9 @@ app.get("/control", async (_, reply) => reply.sendFile("control.html"));
 
 const io = new Server(app.server, {
   cors: { origin: "*" },
-  transports: ["websocket"],     // prefer pure WS
-  pingInterval: 20000,           // 20s
-  pingTimeout: 20000             // 20s
+  transports: ["websocket"], // prefer pure WS
+  pingInterval: 20000, // 20s
+  pingTimeout: 20000, // 20s
 });
 
 const ROOM = process.env.ROOM || "HALLOWEEN";

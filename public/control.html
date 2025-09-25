@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <link
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap"
       rel="stylesheet"
@@ -26,6 +29,8 @@
         position: relative;
         overflow-x: hidden;
         overflow-y: auto;
+        width: 100%;
+        max-width: 100vw;
       }
 
       /* Animated background particles */
@@ -83,7 +88,9 @@
         flex-direction: column;
         justify-content: center;
         width: 100%;
+        max-width: 100vw;
         box-sizing: border-box;
+        overflow-x: hidden;
       }
 
       .header {
@@ -275,14 +282,20 @@
       @media (max-width: 768px) {
         body {
           overflow-y: auto;
+          overflow-x: hidden;
+          width: 100%;
+          max-width: 100vw;
         }
-        
+
         .container {
           padding: 1rem;
           min-height: auto;
           justify-content: flex-start;
           padding-top: 2rem;
           padding-bottom: 2rem;
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden;
         }
 
         .header {
@@ -306,6 +319,7 @@
           margin-bottom: 1.5rem;
           width: 100%;
           max-width: 100%;
+          overflow-x: hidden;
         }
 
         .spell-button {
@@ -335,6 +349,9 @@
           padding: 0.8rem;
           padding-top: 1.5rem;
           padding-bottom: 1.5rem;
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden;
         }
 
         .header {
@@ -379,6 +396,9 @@
           padding: 1rem;
           justify-content: flex-start;
           min-height: auto;
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: hidden;
         }
 
         .header {
@@ -465,6 +485,40 @@
 
         .status {
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+      }
+
+      /* Very small screens - ensure proper scrolling */
+      @media (max-width: 360px) {
+        .container {
+          padding: 0.5rem;
+          padding-top: 1rem;
+          padding-bottom: 1rem;
+        }
+
+        .modal-content {
+          padding: 1rem 0.8rem;
+          margin: 0.3rem;
+          width: calc(100% - 0.6rem);
+          max-width: calc(100vw - 0.6rem);
+        }
+
+        .spell-button {
+          padding: 1rem 1rem;
+          font-size: 0.9rem;
+          min-height: 50px;
+        }
+
+        .header {
+          margin-bottom: 1rem;
+        }
+
+        h1 {
+          font-size: clamp(1.2rem, 8vw, 1.6rem);
+        }
+
+        .subtitle {
+          font-size: clamp(0.8rem, 5vw, 1rem);
         }
       }
 
@@ -648,8 +702,11 @@
       /* Mobile responsive modal */
       @media (max-width: 768px) {
         .modal-content {
-          padding: 2rem 1.5rem;
-          margin: 1rem;
+          padding: 1.5rem 1rem;
+          margin: 0.5rem;
+          width: calc(100% - 1rem);
+          max-width: calc(100vw - 1rem);
+          box-sizing: border-box;
         }
 
         .modal-header h2 {
@@ -661,7 +718,9 @@
         }
 
         .experience-option {
-          padding: 1.5rem;
+          padding: 1.2rem;
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .option-title {
@@ -955,21 +1014,26 @@
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
       const params = new URLSearchParams(location.search);
-      const urlRoom = params.get('room');
-      const urlKey  = params.get('t');
+      const urlRoom = params.get("room");
+      const urlKey = params.get("t");
 
-      const storedRoom = localStorage.getItem('lastRoom');
-      const storedKey  = localStorage.getItem('partyKey');
+      const storedRoom = localStorage.getItem("lastRoom");
+      const storedKey = localStorage.getItem("partyKey");
 
-      const room = (urlRoom || storedRoom || 'HALLOWEEN');
-      const key  = (urlKey  || storedKey  || '');
+      const room = urlRoom || storedRoom || "HALLOWEEN";
+      const key = urlKey || storedKey || "changeme";
 
-      localStorage.setItem('lastRoom', room);
-      if (key) localStorage.setItem('partyKey', key);
+      localStorage.setItem("lastRoom", room);
+      if (key) localStorage.setItem("partyKey", key);
 
-      const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
+      const socket = io({
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+      });
 
-      const buttons = [...document.querySelectorAll('button[data-theme]')];
+      const buttons = [...document.querySelectorAll("button[data-theme]")];
       const status = document.getElementById("status");
       const scaryPopup = document.getElementById("scaryPopup");
       const experienceModal = document.getElementById("experienceModal");
@@ -978,7 +1042,7 @@
 
       let locked = false;
       let isParentalMode = false;
-      
+
       // Enhanced effects variables
       let themeAudio = null;
       let enhancedFlickerTimeout = null;
@@ -1009,7 +1073,9 @@
       function setupExperienceMode() {
         if (isParentalMode) {
           // Hide the halloween button in parental mode
-          const halloweenButton = document.querySelector('[data-theme="halloween"]');
+          const halloweenButton = document.querySelector(
+            '[data-theme="halloween"]'
+          );
           if (halloweenButton) {
             halloweenButton.style.display = "none";
           }
@@ -1079,7 +1145,10 @@
             // 60% chance of popup every 3-5 seconds
             if (Math.random() < 0.6) {
               showScaryPopup(true); // Force popup during enhanced period
-              showStatus("The spirits are restless... something stirs... 👻", 2000);
+              showStatus(
+                "The spirits are restless... something stirs... 👻",
+                2000
+              );
             }
           }
         }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
@@ -1122,46 +1191,52 @@
         }, 1200);
       }
 
-      socket.on('connect', () => {
-        console.log('[control] connected; join', { room, hasKey: !!key });
-        socket.emit('join', { room, role:'control', key });
-        
+      socket.on("connect", () => {
+        console.log("[control] connected; join", {
+          room,
+          hasKey: !!key,
+          keyLength: key?.length,
+        });
+        socket.emit("join", { room, role: "control", key });
+
         // Wait a moment for join to complete, then request state
         setTimeout(() => {
-          console.log('[control] requesting current state after connect');
-          socket.emit('theme:get', room);
+          console.log("[control] requesting current state after connect");
+          socket.emit("theme:get", room);
         }, 100);
-        
+
         showStatus("Connected to the spirit realm... 🔮", 1500);
       });
 
       // Add heartbeat to keep connection alive
       setInterval(() => {
         if (socket.connected) {
-          socket.emit('ping');
+          socket.emit("ping");
         }
       }, 10000); // Every 10 seconds
 
-      socket.on('theme:current', ({ theme }) => {
-        console.log('[control] received theme:current', theme);
+      socket.on("theme:current", ({ theme }) => {
+        console.log("[control] received theme:current", theme);
         if (!theme) return;
-        
+
         // Clear all active states first
-        buttons.forEach(b => b.classList.remove('active'));
-        
+        buttons.forEach((b) => b.classList.remove("active"));
+
         // Set the correct active state
-        const activeButton = buttons.find(b => b.dataset.theme === theme);
+        const activeButton = buttons.find((b) => b.dataset.theme === theme);
         if (activeButton) {
-          activeButton.classList.add('active');
-          console.log('[control] set active button:', theme);
+          activeButton.classList.add("active");
+          console.log("[control] set active button:", theme);
         } else {
-          console.warn('[control] no button found for theme:', theme);
+          console.warn("[control] no button found for theme:", theme);
         }
       });
 
-      socket.on('theme:ack', ({ theme }) => console.log('[control] ack', theme));
-      
-      socket.on('state', s => { 
+      socket.on("theme:ack", ({ theme }) =>
+        console.log("[control] ack", theme)
+      );
+
+      socket.on("state", (s) => {
         locked = !!s.locked;
         if (locked) {
           showStatus("The spirits are resting... ⚰️");
@@ -1171,24 +1246,28 @@
       });
 
       // Enhanced error handling and reconnection
-      socket.on('connect_error', (error) => {
-        console.warn('[control] connection error:', error);
+      socket.on("connect_error", (error) => {
+        console.warn("[control] connection error:", error);
         showStatus("Connection lost... reconnecting... 🔮", 2000);
       });
 
-      socket.on('disconnect', (reason) => {
-        console.warn('[control] disconnected:', reason);
-        showStatus("Disconnected from spirit realm... 🔮", 2000);
+      socket.on("disconnect", (reason) => {
+        console.warn("[control] disconnected:", reason);
+        if (reason === "io server disconnect") {
+          showStatus("Connection rejected - check room/key settings 🔮", 3000);
+        } else {
+          showStatus("Disconnected from spirit realm... 🔮", 2000);
+        }
       });
 
-      socket.on('reconnect', (attemptNumber) => {
-        console.log('[control] reconnected after', attemptNumber, 'attempts');
+      socket.on("reconnect", (attemptNumber) => {
+        console.log("[control] reconnected after", attemptNumber, "attempts");
         showStatus("Reconnected to spirit realm! 🔮", 1500);
-        
+
         // Force state sync after reconnection
         setTimeout(() => {
-          console.log('[control] forcing state sync after reconnect');
-          socket.emit('theme:get', room);
+          console.log("[control] forcing state sync after reconnect");
+          socket.emit("theme:get", room);
         }, 500);
       });
 
@@ -1196,24 +1275,32 @@
       function handleButtonPress(btn) {
         if (locked) return;
         const theme = btn.dataset.theme;
-        console.log('[control] set', theme);
-        socket.emit('theme:set', { room, theme });
+        console.log("[control] set", theme);
+        socket.emit("theme:set", { room, theme });
 
         // watchdog: if no ack/current in 2s, request again
         const start = Date.now();
         const timer = setTimeout(() => {
-          console.warn('[control] no response; requesting state');
-          socket.emit('theme:get', room);
+          console.warn("[control] no response; requesting state");
+          socket.emit("theme:get", room);
         }, 2000);
 
         const clear = () => clearTimeout(timer);
-        const onAck = () => { clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-        const onCur = () => { if (Date.now() - start < 4000) clear(); socket.off('theme:ack', onAck); socket.off('theme:current', onCur); };
-        socket.on('theme:ack', onAck);
-        socket.on('theme:current', onCur);
+        const onAck = () => {
+          clear();
+          socket.off("theme:ack", onAck);
+          socket.off("theme:current", onCur);
+        };
+        const onCur = () => {
+          if (Date.now() - start < 4000) clear();
+          socket.off("theme:ack", onAck);
+          socket.off("theme:current", onCur);
+        };
+        socket.on("theme:ack", onAck);
+        socket.on("theme:current", onCur);
 
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
 
         // Clear any existing button click timeout
         if (buttonClickTimeout) {
@@ -1243,27 +1330,27 @@
         }, 500);
       }
 
-      buttons.forEach(btn => {
+      buttons.forEach((btn) => {
         // Handle click events (desktop)
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener("click", (e) => {
           e.preventDefault();
           handleButtonPress(btn);
         });
 
         // Handle touch events (mobile)
-        btn.addEventListener('touchstart', (e) => {
+        btn.addEventListener("touchstart", (e) => {
           e.preventDefault();
           handleButtonPress(btn);
         });
 
         // Prevent default touch behaviors that might interfere
-        btn.addEventListener('touchend', (e) => {
+        btn.addEventListener("touchend", (e) => {
           e.preventDefault();
         });
 
         // Add keyboard support
-        btn.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+        btn.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             handleButtonPress(btn);
           }
