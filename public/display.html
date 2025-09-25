@@ -95,15 +95,31 @@
         Object.values(vids).forEach(v => { v.preload = 'auto'; v.muted = true; v.play?.().catch(()=>{}); });
 
         let currentTheme = null;
+        const DEFAULT_VIDEO = "zombie-power-cut"; // Default loop to revert to
 
         function show(theme){
           if (!theme || !vids[theme]) return;
+          
+          // Remove all event listeners first to prevent duplicates
+          Object.values(vids).forEach(v => {
+            v.removeEventListener('ended', handleVideoEnd);
+          });
+          
           Object.values(vids).forEach(v => v.classList.remove('show'));
           const v = vids[theme];
           v.classList.add('show');
+          
+          // Add ended event listener to this video
+          v.addEventListener('ended', handleVideoEnd, { once: true });
+          
           setTimeout(() => v.play?.().catch(()=>{}), 0); // nudge playback after paint
           currentTheme = theme;
           console.log('[display] showing', theme);
+        }
+
+        function handleVideoEnd() {
+          console.log('[display] video ended, reverting to default:', DEFAULT_VIDEO);
+          show(DEFAULT_VIDEO);
         }
 
         // Local default: first video id
