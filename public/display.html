@@ -79,66 +79,90 @@
       preload="auto"
       src="/loops/zombie-walk.mp4"
     ></video>
-    <video id="halloween" muted playsinline preload="auto" src="/loops/halloween.mp4"></video>
+    <video
+      id="halloween"
+      muted
+      playsinline
+      preload="auto"
+      src="/loops/halloween.mp4"
+    ></video>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener("DOMContentLoaded", () => {
         const q = new URLSearchParams(location.search);
-        const urlRoom = q.get('room');
-        const room = urlRoom || localStorage.getItem('lastRoom') || 'HALLOWEEN';
-        localStorage.setItem('lastRoom', room);
+        const urlRoom = q.get("room");
+        const room = urlRoom || localStorage.getItem("lastRoom") || "HALLOWEEN";
+        localStorage.setItem("lastRoom", room);
 
-        const socket = io({ transports: ['websocket'], reconnection: true, reconnectionDelayMax: 5000, timeout: 20000 });
+        const socket = io({
+          transports: ["websocket"],
+          reconnection: true,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
+        });
 
-        const vids = Object.fromEntries([...document.querySelectorAll('video[id]')].map(v => [v.id, v]));
-        Object.values(vids).forEach(v => { v.preload = 'auto'; v.muted = true; v.play?.().catch(()=>{}); });
+        const vids = Object.fromEntries(
+          [...document.querySelectorAll("video[id]")].map((v) => [v.id, v])
+        );
+        Object.values(vids).forEach((v) => {
+          v.preload = "auto";
+          v.muted = true;
+          v.play?.().catch(() => {});
+        });
 
         let currentTheme = null;
         const DEFAULT_VIDEO = "zombie-power-cut"; // Default loop to revert to
 
-        function show(theme){
+        function show(theme) {
           if (!theme || !vids[theme]) return;
-          
+
           // Remove all event listeners first to prevent duplicates
-          Object.values(vids).forEach(v => {
-            v.removeEventListener('ended', handleVideoEnd);
+          Object.values(vids).forEach((v) => {
+            v.removeEventListener("ended", handleVideoEnd);
           });
-          
-          Object.values(vids).forEach(v => v.classList.remove('show'));
+
+          Object.values(vids).forEach((v) => v.classList.remove("show"));
           const v = vids[theme];
-          v.classList.add('show');
-          
+          v.classList.add("show");
+
           // Add ended event listener to this video
-          v.addEventListener('ended', handleVideoEnd, { once: true });
-          
-          setTimeout(() => v.play?.().catch(()=>{}), 0); // nudge playback after paint
+          v.addEventListener("ended", handleVideoEnd, { once: true });
+
+          setTimeout(() => v.play?.().catch(() => {}), 0); // nudge playback after paint
           currentTheme = theme;
-          console.log('[display] showing', theme);
+          console.log("[display] showing", theme);
         }
 
         function handleVideoEnd() {
-          console.log('[display] video ended, reverting to default:', DEFAULT_VIDEO);
+          console.log(
+            "[display] video ended, reverting to default:",
+            DEFAULT_VIDEO
+          );
           show(DEFAULT_VIDEO);
         }
 
         // Local default: first video id
         const localDefault = Object.keys(vids)[0];
-        if (localDefault) { show(localDefault); }
+        if (localDefault) {
+          show(localDefault);
+        }
 
-        socket.on('connect', () => {
-          console.log('[display] connected; joining', room);
-          socket.emit('join', { room, role:'display' });
+        socket.on("connect", () => {
+          console.log("[display] connected; joining", room);
+          socket.emit("join", { room, role: "display" });
           // explicit pull in case we connected mid-broadcast
-          socket.emit('theme:get', room);
+          socket.emit("theme:get", room);
         });
 
-        socket.on('theme:current', ({ theme }) => {
+        socket.on("theme:current", ({ theme }) => {
           if (theme && theme !== currentTheme) show(theme);
         });
 
-        socket.on('connect_error', e => console.warn('[display] connect_error', e));
-        socket.on('disconnect', r => console.warn('[display] disconnect', r));
+        socket.on("connect_error", (e) =>
+          console.warn("[display] connect_error", e)
+        );
+        socket.on("disconnect", (r) => console.warn("[display] disconnect", r));
       });
     </script>
   </body>
