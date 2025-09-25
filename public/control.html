@@ -978,6 +978,15 @@
 
       let locked = false;
       let isParentalMode = false;
+      
+      // Enhanced effects variables
+      let themeAudio = null;
+      let enhancedFlickerTimeout = null;
+      let enhancedFlickerInterval = null;
+      let isEnhancedFlickering = false;
+      let buttonClickTimeout = null;
+      let lastScaryPopup = 0;
+      const MIN_SCARY_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
       // Experience selection modal logic
       function showExperienceModal() {
@@ -1021,6 +1030,96 @@
           status.textContent = "";
           status.classList.remove("cooldown");
         }, duration);
+      }
+
+      // Play theme audio function
+      function playThemeAudio() {
+        try {
+          // Stop any existing theme audio
+          if (themeAudio) {
+            themeAudio.pause();
+            themeAudio.currentTime = 0;
+          }
+
+          // Create new theme audio
+          themeAudio = new Audio("/theme.mp3");
+          themeAudio.volume = 0.7;
+          themeAudio.loop = false; // Play once until the end
+
+          // Play the theme
+          themeAudio.play().catch((e) => {
+            console.warn("Could not play theme audio:", e);
+          });
+        } catch (e) {
+          console.warn("Theme audio failed:", e);
+        }
+      }
+
+      // Start enhanced flickering for 20 seconds
+      function startEnhancedFlickering() {
+        // Clear any existing enhanced flicker timeout and interval
+        if (enhancedFlickerTimeout) {
+          clearTimeout(enhancedFlickerTimeout);
+        }
+        if (enhancedFlickerInterval) {
+          clearInterval(enhancedFlickerInterval);
+        }
+
+        isEnhancedFlickering = true;
+
+        // Add enhanced flicker class to body
+        document.body.classList.add("enhanced-flicker");
+
+        // Show knock message
+        showStatus("Knock on the door... if you dare... 👹", 5000);
+
+        // Show frequent popups during enhanced flickering (every 3-5 seconds)
+        enhancedFlickerInterval = setInterval(() => {
+          if (isEnhancedFlickering) {
+            // 60% chance of popup every 3-5 seconds
+            if (Math.random() < 0.6) {
+              showScaryPopup(true); // Force popup during enhanced period
+              showStatus("The spirits are restless... something stirs... 👻", 2000);
+            }
+          }
+        }, Math.random() * 2000 + 3000); // Random interval between 3-5 seconds
+
+        // Remove enhanced flicker after 20 seconds
+        enhancedFlickerTimeout = setTimeout(() => {
+          document.body.classList.remove("enhanced-flicker");
+          isEnhancedFlickering = false;
+          if (enhancedFlickerInterval) {
+            clearInterval(enhancedFlickerInterval);
+            enhancedFlickerInterval = null;
+          }
+          enhancedFlickerTimeout = null;
+        }, 20000);
+      }
+
+      // Scary popup functionality
+      function showScaryPopup(force = false) {
+        if (!scaryPopup) return;
+
+        // Only show the popup image during enhanced flickering (12+ button sequence)
+        if (!isEnhancedFlickering) {
+          return;
+        }
+
+        // Check if enough time has passed since last popup (unless forced)
+        const now = Date.now();
+        if (!force && now - lastScaryPopup < MIN_SCARY_INTERVAL) {
+          return;
+        }
+
+        lastScaryPopup = now;
+
+        // Show the popup with flicker effect
+        scaryPopup.classList.add("show", "flicker");
+
+        // Hide after the flicker animation
+        setTimeout(() => {
+          scaryPopup.classList.remove("show", "flicker");
+        }, 1200);
       }
 
       socket.on('connect', () => {
@@ -1069,7 +1168,33 @@
 
         buttons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        showStatus("The spirits have been summoned! 👻", 1500);
+
+        // Clear any existing button click timeout
+        if (buttonClickTimeout) {
+          clearTimeout(buttonClickTimeout);
+        }
+
+        // Start enhanced sequence for all buttons (unless in parental mode)
+        if (!isEnhancedFlickering && !isParentalMode) {
+          if (theme === "halloween") {
+            // Immediate enhanced sequence for halloween theme (with popup image)
+            playThemeAudio();
+            startEnhancedFlickering();
+          } else {
+            // 6 second delay for other themes (flickering without popup image)
+            buttonClickTimeout = setTimeout(() => {
+              if (!isEnhancedFlickering) {
+                playThemeAudio();
+                startEnhancedFlickering();
+              }
+            }, 6000);
+          }
+        }
+
+        // Success feedback
+        setTimeout(() => {
+          showStatus("The spirits have been summoned! 👻", 1500);
+        }, 500);
       }
 
       buttons.forEach(btn => {
